@@ -16,22 +16,27 @@ func Abs(x int) int {
 }
 
 func day01p1(left, right []int) (int, error) {
+	sort.Ints(left)
+	sort.Ints(right)
+
 	sum := 0
-	for i := 0; i < len(left); i++ {
-		diff := Abs(right[i] - left[i])
-		sum += diff
+	for i := range left {
+		sum += Abs(right[i] - left[i])
 	}
 	return sum, nil
 }
 
 func day01p2(left, right []int) (int, error) {
+	sort.Ints(left)
+	sort.Ints(right)
+
 	counts := make(map[int]int)
-	for i := 0; i < len(left); i++ {
+	for i := range right {
 		counts[right[i]] += 1
 	}
 
 	total := 0
-	for i := 0; i < len(left); i++ {
+	for i := range left {
 		total += left[i] * counts[left[i]]
 	}
 	return total, nil
@@ -60,8 +65,6 @@ func readFile(inpath string) ([]int, []int, error) {
 	if len(left) != len(right) {
 		return nil, nil, fmt.Errorf("different lengths: %d %d", len(left), len(right))
 	}
-	sort.Ints(left)
-	sort.Ints(right)
 	return left, right, nil
 }
 

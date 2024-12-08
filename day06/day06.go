@@ -44,19 +44,22 @@ type guard struct {
 }
 
 func (guard *guard) move(themap [][]rune) {
-	// turn if blocked
-	var ahead rune
-	switch guard.dir {
-	case 0:
-		ahead = getmap(themap, guard.x, guard.y-1)
-	case 1:
-		ahead = getmap(themap, guard.x+1, guard.y)
-	case 2:
-		ahead = getmap(themap, guard.x, guard.y+1)
-	case 3:
-		ahead = getmap(themap, guard.x-1, guard.y)
-	}
-	if ahead == '#' {
+	// turn while blocked
+	for {
+		var ahead rune
+		switch guard.dir {
+		case 0:
+			ahead = getmap(themap, guard.x, guard.y-1)
+		case 1:
+			ahead = getmap(themap, guard.x+1, guard.y)
+		case 2:
+			ahead = getmap(themap, guard.x, guard.y+1)
+		case 3:
+			ahead = getmap(themap, guard.x-1, guard.y)
+		}
+		if ahead != '#' {
+			break
+		}
 		guard.dir = (guard.dir + 1) % 4
 	}
 	// walk

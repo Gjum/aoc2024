@@ -77,20 +77,36 @@ func readFile(inpath string) (Puzzle, error) {
 	return Puzzle{world, robot, moves}, nil
 }
 
-func pushInto1(puzzle *Puzzle, pos xy, dir rune) bool {
+func pushInto(puzzle *Puzzle, pos xy, dir rune, affected map[xy]rune) bool {
 	switch getworld(puzzle.world, pos) {
 	case '#':
 		return false
 	case '.':
 		return true
 	case 'O':
+		affected[pos] = 'O'
 		into := pos.plusDir(dir)
-		if pushInto1(puzzle, into, dir) {
-			setworld(puzzle.world, into, getworld(puzzle.world, pos))
-			setworld(puzzle.world, pos, '.')
+		return pushInto(puzzle, into, dir, affected)
+	case '[':
+		pos2 := pos.plus(1, 0)
+		if affected[pos] == '[' && affected[pos2] == ']' {
 			return true
 		}
-		return false
+		affected[pos] = '['
+		affected[pos2] = ']'
+		into := pos.plusDir(dir)
+		into2 := into.plus(1, 0)
+		return pushInto(puzzle, into, dir, affected) && pushInto(puzzle, into2, dir, affected)
+	case ']':
+		pos2 := pos.plus(-1, 0)
+		if affected[pos] == ']' && affected[pos2] == '[' {
+			return true
+		}
+		affected[pos] = ']'
+		affected[pos2] = '['
+		into := pos.plusDir(dir)
+		into2 := into.plus(-1, 0)
+		return pushInto(puzzle, into, dir, affected) && pushInto(puzzle, into2, dir, affected)
 	default:
 		return false
 	}
@@ -98,10 +114,16 @@ func pushInto1(puzzle *Puzzle, pos xy, dir rune) bool {
 
 func part1(puzzle Puzzle) int {
 	for _, dir := range puzzle.moves {
-		into := puzzle.robot.plusDir(dir)
-		if pushInto1(&puzzle, into, dir) {
-			setworld(puzzle.world, into, '.')
-			puzzle.robot = into
+		affected := make(map[xy]rune)
+		robotNew := puzzle.robot.plusDir(dir)
+		if pushInto(&puzzle, robotNew, dir, affected) {
+			for from := range affected {
+				setworld(puzzle.world, from, '.')
+			}
+			for from, tile := range affected {
+				setworld(puzzle.world, from.plusDir(dir), tile)
+			}
+			puzzle.robot = robotNew
 		}
 	}
 
@@ -123,14 +145,30 @@ func part1(puzzle Puzzle) int {
 			if c == 'O' {
 				output += x + y*100
 			}
+			if c == '[' {
+				output += x + y*100
+			}
 		}
 	}
 	return output
 }
 
 func part2(puzzle Puzzle) int {
-	output := 0
-	return output
+	var world [][]rune
+	for _, rowOrig := range puzzle.world {
+		var row []rune
+		for _, c := range rowOrig {
+			if c == 'O' {
+				row = append(row, '[', ']')
+			} else {
+				row = append(row, c, c)
+			}
+		}
+		world = append(world, row)
+	}
+	rx := puzzle.robot.x * 2
+	ry := puzzle.robot.y
+	return part1(Puzzle{world, xy{rx, ry}, puzzle.moves})
 }
 
 func expect(expected, actual int) {
@@ -147,6 +185,11 @@ func main() {
 		return
 	}
 	expect(10092, part1(inEx))
+	inEx, err = readFile("day15/example.in")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	expect(9021, part2(inEx))
 
 	inCh, err := readFile("day15/challenge.in")
@@ -155,5 +198,11 @@ func main() {
 		return
 	}
 	fmt.Println("p1:", part1(inCh))
+
+	inCh, err = readFile("day15/challenge.in")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	fmt.Println("p2:", part2(inCh))
 }
